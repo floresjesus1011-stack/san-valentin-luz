@@ -63,7 +63,6 @@
       opacity: 0.95;
     }
 
-    /* BOTONES GRANDES */
     .buttons{
       display:flex;
       gap: 14px;
@@ -72,40 +71,39 @@
       margin-top: 12px;
       margin-bottom: 14px;
       position: relative;
-      min-height: 92px; /* para que no salte el layout cuando se mueva NO */
+      min-height: 110px; /* un poco más para que NO tenga espacio sin tapar SÍ */
     }
 
     button{
       border:0;
       border-radius: 999px;
-      padding: 18px 30px;        /* MÁS GRANDES */
+      padding: 18px 30px;
       font-weight: 950;
       cursor:pointer;
       transition: transform .12s ease, filter .12s ease;
-      font-size: 22px;           /* MÁS GRANDES */
+      font-size: 22px;
       min-width: 160px;
       user-select:none;
       touch-action: manipulation;
       position: relative;
     }
 
-    button:hover{ transform: scale(1.04); filter: brightness(1.03); }
-
     .yes{
       background: linear-gradient(135deg, var(--pink), #ff7cc2);
       color:white;
       box-shadow: 0 12px 24px rgba(255,79,163,0.28);
       transform-origin: center;
+      z-index: 3;           /* SI encima */
     }
     .no{
       background:#b8b8b8;
       color:white;
+      z-index: 2;
     }
 
-    /* IMAGEN DEBAJO Y MÁS CHICA */
     .nayeon-wrap{
       margin: 10px auto 2px;
-      width: min(270px, 74vw);     /* MÁS CHICA */
+      width: min(270px, 74vw);
       aspect-ratio: 1 / 1;
       border-radius: 18px;
       overflow:hidden;
@@ -127,7 +125,6 @@
       opacity:0.75;
     }
 
-    /* corazones */
     .heart{
       position:absolute;
       bottom:-30px;
@@ -142,19 +139,15 @@
       to{ transform: translateY(-115vh) translateX(40px) rotate(18deg); }
     }
 
-    /* NO flotante cuando huye */
     .no-floating{
       position: absolute !important;
-      left: 50%;
-      top: 0;
-      transform: translateX(120px);
-      z-index: 5;
+      z-index: 2;          /* SI sigue encima por z-index 3 */
+      transform: translate(0,0) !important;
     }
   </style>
 </head>
 
 <body>
-  <!-- Música local (mantén twice-24-7.mp3 en el repo) -->
   <audio id="bgm" src="twice-24-7.mp3" loop preload="auto"></audio>
 
   <div class="card" id="card">
@@ -164,26 +157,27 @@
     <p class="sub" id="sub">Luz, mi Amor… hice esto solo para ti 🐰💗</p>
 
     <div class="buttons" id="btnArea">
-      <button class="yes" id="yesBtn" onclick="accept()">SÍ 💕</button>
-      <button class="no" id="noBtn" onclick="reject()">NO 💔</button>
+      <button class="yes" id="yesBtn">SÍ 💕</button>
+      <button class="no" id="noBtn">NO 💔</button>
     </div>
 
-    <!-- Imagen DEBAJO de los botones -->
     <div class="nayeon-wrap">
       <img id="nayeonImg" alt="Nayeon" />
     </div>
 
-    <div class="tiny" id="tiny"> Siempre estaré contigo mi vida 😌</div>
+    <div class="tiny" id="tiny">Siempre estaré contigo mi vida 😌</div>
   </div>
 
 <script>
-  // URLs estables (Wikimedia). Puedes agregar más si quieres.
+  // Imágenes (puedes agregar más URLs)
   const NAYEON_IMAGES = [
-    "https://upload.wikimedia.org/wikipedia/commons/thumb/7/72/Nayeon_251120_1.jpg/640px-Nayeon_251120_1.jpg",
-    "https://upload.wikimedia.org/wikipedia/commons/thumb/8/86/Im_Na-yeon_performing_at_SAC_2016_03.jpg/640px-Im_Na-yeon_performing_at_SAC_2016_03.jpg"
-  ];
-
-  // Preguntas: 4 repreguntas (en la 4ta desaparece NO)
+  "https://upload.wikimedia.org/wikipedia/commons/thumb/7/72/Nayeon_251120_1.jpg/640px-Nayeon_251120_1.jpg",
+  "https://upload.wikimedia.org/wikipedia/commons/thumb/8/86/Im_Na-yeon_performing_at_SAC_2016_03.jpg/640px-Im_Na-yeon_performing_at_SAC_2016_03.jpg",
+  "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5f/Nayeon_at_Golden_Disc_Awards_2018.jpg/640px-Nayeon_at_Golden_Disc_Awards_2018.jpg",
+  "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0a/Im_Na-yeon_at_KBS_Music_Bank_2018.jpg/640px-Im_Na-yeon_at_KBS_Music_Bank_2018.jpg",
+  "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2a/Nayeon_Twice_Fancy_2019.jpg/640px-Nayeon_Twice_Fancy_2019.jpg"
+];
+  // 4 repreguntas; en la 4ta se borra NO
   let noCount = 0;
   const questions = [
     "¿Segura, Amor? 🥺",
@@ -192,13 +186,13 @@
     "Ok, ya no hay botón NO 😏❤️"
   ];
 
-  // --- Música (solo inicia tras interacción)
+  // Música
   function startMusic(){
     const bgm = document.getElementById("bgm");
     bgm.play().catch(()=>{});
   }
 
-  // --- Corazones
+  // Corazones
   function hearts(n=12){
     for(let i=0;i<n;i++){
       const h = document.createElement("div");
@@ -215,96 +209,117 @@
   hearts(18);
   setInterval(()=>hearts(10), 2600);
 
-  // --- Rotación de imágenes sin repetir hasta agotar
+  // Rotación sin repetir hasta agotar
   let remaining = [...NAYEON_IMAGES];
   function pickNextImage(){
     if (remaining.length === 0) remaining = [...NAYEON_IMAGES];
     const i = Math.floor(Math.random() * remaining.length);
-    const chosen = remaining.splice(i, 1)[0];
-    return chosen;
+    return remaining.splice(i, 1)[0];
   }
   function setNewNayeon(){
     const img = document.getElementById("nayeonImg");
-    const url = pickNextImage();
-    img.src = url + "?r=" + Date.now(); // pequeño cache-buster
+    img.src = pickNextImage() + "?r=" + Date.now();
   }
-  setNewNayeon(); // inicial
+  setNewNayeon();
 
-  // --- “NO huye”
+  // Botones y área
   const noBtn = document.getElementById("noBtn");
+  const yesBtn = document.getElementById("yesBtn");
   const btnArea = document.getElementById("btnArea");
 
-  // Convierte el NO en flotante para moverlo dentro del área
-  function ensureNoFloating(){
-    if (!noBtn.classList.contains("no-floating")) {
-      noBtn.classList.add("no-floating");
-      // posición inicial dentro del área
-      moveNoButton();
-    }
-  }
-
-  function moveNoButton(){
-    // límites del área de botones
-    const areaRect = btnArea.getBoundingClientRect();
-    const btnRect = noBtn.getBoundingClientRect();
-
-    // calcula rangos donde cabe el botón
-    const maxX = Math.max(0, areaRect.width - btnRect.width);
-    const maxY = Math.max(0, areaRect.height - btnRect.height);
-
-    const x = Math.random() * maxX;
-    const y = Math.random() * maxY;
-
-    // posiciona relativo al contenedor .buttons
-    noBtn.style.left = x + "px";
-    noBtn.style.top  = y + "px";
-    noBtn.style.transform = "translate(0,0)";
-  }
-
-  // Huir al pasar/tocar
-  noBtn.addEventListener("mouseenter", () => {
-    if (noCount < 4) { ensureNoFloating(); moveNoButton(); }
-  });
-  noBtn.addEventListener("touchstart", (e) => {
-    if (noCount < 4) {
-      e.preventDefault();
-      ensureNoFloating();
-      moveNoButton();
-    }
-  }, { passive: false });
-
-  // --- “SÍ crece” cada vez que intenta NO
+  // “SÍ crece”
   let yesScale = 1;
-  const yesBtn = document.getElementById("yesBtn");
   function growYes(){
     yesScale = Math.min(1.65, yesScale + 0.12);
     yesBtn.style.transform = `scale(${yesScale})`;
   }
 
-  // --- Click NO: cambia pregunta + cambia imagen + crece SÍ + eventualmente desaparece NO
+  // Convierte NO a flotante
+  function ensureNoFloating(){
+    if (!noBtn.classList.contains("no-floating")) {
+      noBtn.classList.add("no-floating");
+      // fijar posición inicial (para que left/top funcionen)
+      noBtn.style.left = "0px";
+      noBtn.style.top  = "0px";
+    }
+  }
+
+  // Chequeo de intersección entre rects
+  function intersects(a, b){
+    return !(a.right < b.left || a.left > b.right || a.bottom < b.top || a.top > b.bottom);
+  }
+
+  // Mueve NO a una posición que NO tape el SI
+  function moveNoButtonAvoidYes(){
+    ensureNoFloating();
+
+    const areaRect = btnArea.getBoundingClientRect();
+    const yesRect  = yesBtn.getBoundingClientRect();
+
+    // Medidas del NO (usar offsetWidth/Height es estable)
+    const noW = noBtn.offsetWidth;
+    const noH = noBtn.offsetHeight;
+
+    const maxX = Math.max(0, areaRect.width - noW);
+    const maxY = Math.max(0, areaRect.height - noH);
+
+    // “zona prohibida” alrededor del SI (margen extra)
+    const pad = 18;
+
+    // Convertir yesRect a coords relativas al área
+    const forbidden = {
+      left:   (yesRect.left - areaRect.left) - pad,
+      right:  (yesRect.right - areaRect.left) + pad,
+      top:    (yesRect.top - areaRect.top) - pad,
+      bottom: (yesRect.bottom - areaRect.top) + pad
+    };
+
+    // Intentar varias veces encontrar un lugar seguro
+    for (let tries = 0; tries < 40; tries++){
+      const x = Math.random() * maxX;
+      const y = Math.random() * maxY;
+
+      const candidate = {
+        left: x,
+        top: y,
+        right: x + noW,
+        bottom: y + noH
+      };
+
+      if (!intersects(candidate, forbidden)) {
+        noBtn.style.left = x + "px";
+        noBtn.style.top  = y + "px";
+        return;
+      }
+    }
+
+    // Si no encuentra (muy raro), lo manda a un lugar “seguro” por defecto
+    noBtn.style.left = "0px";
+    noBtn.style.top  = (maxY) + "px";
+  }
+
+  // Lógica de NO (cambia imagen SIEMPRE)
   function reject(){
     startMusic();
-    setNewNayeon();   // otra foto en cada pregunta
+    setNewNayeon();   // ✅ ahora siempre cambia
     growYes();
 
     const question = document.getElementById("question");
     const sub = document.getElementById("sub");
     const tiny = document.getElementById("tiny");
 
-    // actualiza texto
     question.textContent = questions[Math.min(noCount, questions.length - 1)];
     sub.textContent = "Cada NO me hace insistir más… y sacar otra foto de Nayeon 🐰💗";
 
     noCount++;
 
-    // 4ta repregunta => borrar NO
     if (noCount >= 4){
       noBtn.style.display = "none";
       tiny.textContent = "Ya fue… el destino dice que es SÍ 😌💘";
     } else {
-      // que huya también después de click
-      ensureNoFloating();
-      moveNoButton();
+      // después de “NO”, que huya SIN tapar el SI
+      // pequeño delay para que calcule bien tamaños en móvil
+      setTimeout(moveNoButtonAvoidYes, 30);
     }
   }
 
@@ -320,8 +335,29 @@
     `;
     hearts(26);
   }
+
+  // Eventos:
+  // - En desktop: al pasar el mouse, NO huye evitando el SI
+  // - En móvil: al tocar NO, primero cuenta como NO (reject) y luego huye
+  yesBtn.addEventListener("click", accept);
+
+  noBtn.addEventListener("mouseenter", () => {
+    if (noCount < 4) moveNoButtonAvoidYes();
+  });
+
+  noBtn.addEventListener("click", () => {
+    // ✅ click real garantiza cambio de imagen/pregunta
+    if (noCount < 4) reject();
+  });
+
+  // En móvil, muchos toques no disparan hover; hacemos “pointerdown” para que se sienta que huye,
+  // pero SIN bloquear el click: solo lo movemos un poquito después.
+  noBtn.addEventListener("pointerdown", () => {
+    if (noCount < 4) {
+      // deja que el click ocurra y luego mueve
+      setTimeout(moveNoButtonAvoidYes, 10);
+    }
+  });
 </script>
 </body>
 </html>
-
-
