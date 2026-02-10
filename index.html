@@ -63,12 +63,12 @@
       opacity: 0.95;
     }
 
-    /* Área de botones (NO flotante dentro) */
+    /* Área de botones */
     .buttons{
       position: relative;
       width: min(520px, 92vw);
       margin: 14px auto 12px;
-      height: 140px; /* espacio para que NO huya sin tapar */
+      height: 170px; /* más alto = NO puede huir lejos */
     }
 
     button{
@@ -95,7 +95,7 @@
       color:white;
       box-shadow: 0 12px 24px rgba(255,79,163,0.28);
       transform-origin: center;
-      z-index: 5; /* siempre arriba visualmente */
+      z-index: 5;
     }
 
     .no{
@@ -104,7 +104,7 @@
       z-index: 4;
     }
 
-    /* Imagen debajo y más chica */
+    /* Imagen debajo */
     .nayeon-wrap{
       margin: 10px auto 2px;
       width: min(270px, 74vw);
@@ -144,7 +144,6 @@
       to{ transform: translateY(-115vh) translateX(40px) rotate(18deg); }
     }
 
-    /* Cuando “bloqueamos” el Sí para evitar toques accidentales */
     .disabled{
       pointer-events: none;
       filter: grayscale(0.1) brightness(0.98);
@@ -153,7 +152,6 @@
 </head>
 
 <body>
-  <!-- Música local (mantén twice-24-7.mp3 en el repo) -->
   <audio id="bgm" src="twice-24-7.mp3" loop preload="auto"></audio>
 
   <div class="card" id="card">
@@ -175,7 +173,6 @@
   </div>
 
 <script>
-  // ✅ 5 URLs de Nayeon (Wikimedia)
   const NAYEON_IMAGES = [
     "https://upload.wikimedia.org/wikipedia/commons/thumb/7/72/Nayeon_251120_1.jpg/640px-Nayeon_251120_1.jpg",
     "https://upload.wikimedia.org/wikipedia/commons/thumb/8/86/Im_Na-yeon_performing_at_SAC_2016_03.jpg/640px-Im_Na-yeon_performing_at_SAC_2016_03.jpg",
@@ -184,7 +181,6 @@
     "https://upload.wikimedia.org/wikipedia/commons/thumb/6/67/Nayeon_241024_2.jpg/640px-Nayeon_241024_2.jpg"
   ];
 
-  // 4 repreguntas; en la 4ta se borra NO
   let noCount = 0;
   const questions = [
     "¿Segura, Amor? 🥺",
@@ -193,13 +189,34 @@
     "Ok, ya no hay botón NO 😏❤️"
   ];
 
-  // Música
+  // ===== Música: primer toque SIEMPRE intenta reproducir =====
+  let musicStarted = false;
+  const bgm = document.getElementById("bgm");
+
   function startMusic(){
-    const bgm = document.getElementById("bgm");
-    bgm.play().catch(()=>{});
+    if (musicStarted) return;
+    // llamar play() lo más directo posible dentro de un gesto del usuario
+    bgm.play().then(() => {
+      musicStarted = true;
+    }).catch(() => {
+      // si falla, lo intentará el listener global de primer toque
+    });
   }
 
-  // Corazones
+  // Fallback: primer toque/click en cualquier parte
+  function oneTimeStart(){
+    startMusic();
+    if (musicStarted) {
+      document.removeEventListener("pointerdown", oneTimeStart, true);
+      document.removeEventListener("click", oneTimeStart, true);
+      document.removeEventListener("touchstart", oneTimeStart, true);
+    }
+  }
+  document.addEventListener("pointerdown", oneTimeStart, true);
+  document.addEventListener("click", oneTimeStart, true);
+  document.addEventListener("touchstart", oneTimeStart, true);
+
+  // ===== Corazones =====
   function hearts(n=12){
     for(let i=0;i<n;i++){
       const h = document.createElement("div");
@@ -216,7 +233,7 @@
   hearts(18);
   setInterval(()=>hearts(10), 2600);
 
-  // Rotación sin repetir hasta agotar
+  // ===== Fotos sin repetir =====
   let remaining = [...NAYEON_IMAGES];
   function pickNextImage(){
     if (remaining.length === 0) remaining = [...NAYEON_IMAGES];
@@ -229,19 +246,18 @@
   }
   setNewNayeon();
 
+  // ===== Botones =====
   const noBtn = document.getElementById("noBtn");
   const yesBtn = document.getElementById("yesBtn");
   const btnArea = document.getElementById("btnArea");
 
-  // Posicionamiento inicial: separar SÍ y NO para evitar toques accidentales
   function placeInitialButtons(){
-    // SÍ arriba centrado
     yesBtn.style.top = "8px";
     yesBtn.style.left = "50%";
     yesBtn.style.transform = "translateX(-50%)";
 
-    // NO abajo centrado (bien separado)
-    noBtn.style.top = "78px";
+    // NO BIEN ABAJO para que el salto se note
+    noBtn.style.top = "102px";
     noBtn.style.left = "50%";
     noBtn.style.transform = "translateX(-50%)";
   }
@@ -250,77 +266,59 @@
   // “SÍ crece”
   let yesScale = 1;
   function growYes(){
-    yesScale = Math.min(1.65, yesScale + 0.12);
+    yesScale = Math.min(1.75, yesScale + 0.14);
     yesBtn.style.transform = `translateX(-50%) scale(${yesScale})`;
   }
 
-  // Intersección de rects (en coords relativas al área)
-  function intersects(a, b){
-    return !(a.right < b.left || a.left > b.right || a.bottom < b.top || a.top > b.bottom);
+  function lockYesBriefly(){
+    yesBtn.classList.add("disabled");
+    setTimeout(() => yesBtn.classList.remove("disabled"), 520);
   }
 
-  // Evita que NO se ponga encima de SÍ (y además lo alejamos bastante)
-  function moveNoButtonAvoidYes(){
+  // ===== Movimiento del NO: SALTOS MÁS LEJOS =====
+  // Idea: moverlo a una "zona opuesta" para que el salto sea evidente.
+  function moveNoFar(){
     const areaRect = btnArea.getBoundingClientRect();
-    const yesRect  = yesBtn.getBoundingClientRect();
-
     const noW = noBtn.offsetWidth;
     const noH = noBtn.offsetHeight;
 
     const maxX = Math.max(0, areaRect.width - noW);
     const maxY = Math.max(0, areaRect.height - noH);
 
-    // zona prohibida alrededor del SÍ (margen GRANDE para móvil)
-    const pad = 32;
+    // Posición actual relativa
+    const currentLeft = parseFloat(noBtn.style.left || "50");
+    const currentTop  = parseFloat(noBtn.style.top  || "102");
 
-    const forbidden = {
-      left:   (yesRect.left - areaRect.left) - pad,
-      right:  (yesRect.right - areaRect.left) + pad,
-      top:    (yesRect.top - areaRect.top) - pad,
-      bottom: (yesRect.bottom - areaRect.top) + pad
-    };
+    // Elegir "cuadrante" opuesto (izq/der + arriba/abajo)
+    // Si está cerca del centro, lo mandamos a esquinas.
+    const goLeft  = currentLeft > (areaRect.width * 0.5);
+    const goTop   = currentTop  > (areaRect.height * 0.5);
 
-    // Intentos para encontrar punto seguro
-    for (let tries = 0; tries < 60; tries++){
-      const x = Math.random() * maxX;
-      const y = Math.random() * maxY;
+    const xMin = goLeft ? 0 : Math.max(0, maxX * 0.55);
+    const xMax = goLeft ? Math.max(0, maxX * 0.45) : maxX;
 
-      const candidate = { left:x, top:y, right:x+noW, bottom:y+noH };
+    const yMin = goTop ? 0 : Math.max(0, maxY * 0.55);
+    const yMax = goTop ? Math.max(0, maxY * 0.45) : maxY;
 
-      // Condición extra: que NO quede “muy arriba” cerca del SÍ (evita coincidencias)
-      const farEnough = y > (forbidden.bottom + 6) || y + noH < (forbidden.top - 6);
+    // random dentro de esa zona (más lejos)
+    const x = xMin + Math.random() * Math.max(1, (xMax - xMin));
+    const y = yMin + Math.random() * Math.max(1, (yMax - yMin));
 
-      if (!intersects(candidate, forbidden) && farEnough) {
-        noBtn.style.left = (x + noW/2) + "px";
-        noBtn.style.top  = y + "px";
-        noBtn.style.transform = "translateX(-50%)";
-        return;
-      }
-    }
-
-    // Fallback: abajo al centro
-    noBtn.style.left = "50%";
-    noBtn.style.top  = (maxY) + "px";
+    noBtn.style.left = (x + noW/2) + "px";
+    noBtn.style.top  = y + "px";
     noBtn.style.transform = "translateX(-50%)";
   }
 
-  // Evitar que SÍ se presione por accidente cuando la intención es NO:
-  // bloqueamos SÍ por un instante tras interacción con NO
-  function lockYesBriefly(){
-    yesBtn.classList.add("disabled");
-    setTimeout(() => yesBtn.classList.remove("disabled"), 450);
-  }
-
   function reject(){
-    startMusic();
+    startMusic();          // ✅ primero
     lockYesBriefly();
-    setNewNayeon();   // ✅ cambia imagen SIEMPRE
+    setNewNayeon();        // ✅ cambia imagen siempre
     growYes();
 
     document.getElementById("question").textContent =
       questions[Math.min(noCount, questions.length - 1)];
     document.getElementById("sub").textContent =
-      "Cada NO me hace insistir más… y sacar otra foto de Nayeon 🐰💗";
+      "Cada NO me hace insistir más… Nayeon dice que digas que si 🐰💗";
 
     noCount++;
 
@@ -328,8 +326,8 @@
       noBtn.style.display = "none";
       document.getElementById("tiny").textContent = "Ya fue… el destino dice que es SÍ 😌💘";
     } else {
-      // luego huye lejos del SÍ
-      setTimeout(moveNoButtonAvoidYes, 20);
+      // mover lejos después del NO
+      setTimeout(moveNoFar, 20);
     }
   }
 
@@ -349,17 +347,19 @@
   // Eventos
   yesBtn.addEventListener("click", accept);
 
-  // En desktop: al acercarse, huye
+  // Desktop: al acercarse, huye lejos
   noBtn.addEventListener("mouseenter", () => {
-    if (noCount < 4) moveNoButtonAvoidYes();
+    if (noCount < 4) moveNoFar();
   });
 
-  // En móvil/desktop: pointerdown ejecuta NO inmediatamente y luego huye
+  // Móvil/desktop: pointerdown = NO inmediato (más confiable) + huida lejos
   noBtn.addEventListener("pointerdown", (e) => {
     if (noCount >= 4) return;
-    e.preventDefault();          // evita clicks fantasmas
+    e.preventDefault();
+    startMusic(); // ✅ asegurar música desde el primer toque
     reject();
   }, { passive: false });
 </script>
 </body>
 </html>
+
