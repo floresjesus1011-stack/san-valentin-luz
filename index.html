@@ -1,0 +1,263 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Tue Feb 10 00:55:57 2026
+
+@author: KG6430
+"""
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>San Valentín 💖 (Nayeon edition)</title>
+
+  <style>
+    :root{
+      --pink: #ff4fa3;
+      --soft: #ffe3f1;
+      --dark: #8a0042;
+      --card: rgba(255,255,255,0.93);
+    }
+    *{ box-sizing: border-box; }
+
+    body{
+      margin:0;
+      min-height:100vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background: linear-gradient(135deg, var(--soft), #ffd1e8, #ffc2df);
+      overflow:hidden;
+      padding: 16px;
+    }
+
+    .card{
+      width:min(560px, 94vw);
+      background: var(--card);
+      border: 2px solid rgba(255,79,163,0.22);
+      border-radius: 22px;
+      padding: 22px;
+      text-align:center;
+      box-shadow: 0 20px 55px rgba(0,0,0,0.22);
+      backdrop-filter: blur(6px);
+    }
+
+    .badge{
+      display:inline-block;
+      padding: 8px 14px;
+      border-radius: 999px;
+      background: rgba(255,79,163,0.14);
+      border: 1px solid rgba(255,79,163,0.22);
+      color: var(--dark);
+      font-weight: 900;
+      margin-bottom: 12px;
+    }
+
+    h1{
+      margin: 10px 0 10px;
+      color: var(--dark);
+      font-size: clamp(22px, 4vw, 32px);
+      line-height: 1.15;
+    }
+
+    .sub{
+      margin: 0 0 14px;
+      color:#6b1a4a;
+      font-weight: 650;
+      opacity: 0.95;
+    }
+
+    .nayeon-wrap{
+      margin: 14px auto 8px;
+      width: min(380px, 86vw);
+      aspect-ratio: 1 / 1;
+      border-radius: 18px;
+      overflow:hidden;
+      box-shadow: 0 14px 32px rgba(0,0,0,0.18);
+      border: 2px solid rgba(255,79,163,0.20);
+      background: #fff;
+      position: relative;
+    }
+
+    .nayeon-wrap img{
+      width:100%;
+      height:100%;
+      object-fit: cover;
+      display:block;
+      transform: scale(1.02);
+    }
+
+    .img-caption{
+      margin: 8px 0 0;
+      font-size: 12px;
+      color:#6b1a4a;
+      opacity:0.78;
+    }
+
+    .buttons{
+      display:flex;
+      gap: 12px;
+      justify-content:center;
+      flex-wrap: wrap;
+      margin-top: 16px;
+    }
+
+    button{
+      border:0;
+      border-radius: 999px;
+      padding: 12px 20px;
+      font-weight: 900;
+      cursor:pointer;
+      transition: transform .12s ease, filter .12s ease;
+      min-width: 120px;
+    }
+    button:hover{ transform: scale(1.05); filter: brightness(1.03); }
+
+    .yes{
+      background: linear-gradient(135deg, var(--pink), #ff7cc2);
+      color:white;
+      box-shadow: 0 12px 24px rgba(255,79,163,0.28);
+    }
+    .no{
+      background:#b8b8b8;
+      color:white;
+    }
+
+    .tiny{
+      margin-top: 12px;
+      font-size: 12px;
+      color:#6b1a4a;
+      opacity:0.70;
+    }
+
+    .heart{
+      position:absolute;
+      bottom:-30px;
+      user-select:none;
+      pointer-events:none;
+      animation: floatUp linear infinite;
+      opacity:0.75;
+      filter: drop-shadow(0 6px 8px rgba(0,0,0,0.14));
+    }
+    @keyframes floatUp{
+      from{ transform: translateY(0) translateX(0) rotate(0deg); }
+      to{ transform: translateY(-115vh) translateX(40px) rotate(18deg); }
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Audio local: pon twice-24-7.mp3 junto a este HTML -->
+  <audio id="bgm" src="twice-24-7.mp3" loop preload="auto"></audio>
+
+  <div class="card" id="card">
+    <div class="badge">🍭 TWICE • Nayeon vibes • Para mi Amor Luz</div>
+
+    <h1 id="question">¿Quieres ser mi Valentín? 💘</h1>
+    <p class="sub" id="sub">Luz, mi Amor… te hice esto con pura energía de Nayeon 🐰💗</p>
+
+    <div class="nayeon-wrap">
+      <img id="nayeonImg" alt="Nayeon" />
+    </div>
+    <div class="img-caption" id="imgCaption">Foto random de Nayeon ✨</div>
+
+    <div class="buttons" id="buttons">
+      <button class="yes" onclick="accept()">Sí</button>
+      <button class="no" id="noBtn" onclick="reject()">No</button>
+    </div>
+
+    <div class="tiny" id="tiny">Tip: cada clic cambia la foto 😌</div>
+  </div>
+
+<script>
+  // Imágenes (Wikimedia / estables). Puedes agregar más URLs aquí.
+  const NAYEON_IMAGES = [
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/7/72/Nayeon_251120_1.jpg/640px-Nayeon_251120_1.jpg",
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/8/86/Im_Na-yeon_performing_at_SAC_2016_03.jpg/640px-Im_Na-yeon_performing_at_SAC_2016_03.jpg"
+  ];
+
+  // Frases de “No” (y en la 4ta repregunta desaparece el botón No)
+  let noCount = 0;
+  const questions = [
+    "¿Segura, Amor? 🥺",
+    "Luz… no me rompas el corazón 💕",
+    "Vamos, mi Amor… di que sí 😘",
+    "Ok, ya no hay botón NO 😏❤️"
+  ];
+
+  // ===== Utilidades =====
+  function randomPick(arr){
+    return arr[Math.floor(Math.random() * arr.length)];
+  }
+
+  function setRandomNayeon(){
+    const img = document.getElementById("nayeonImg");
+    const chosen = randomPick(NAYEON_IMAGES);
+    img.src = chosen + "?r=" + Date.now(); // cache-buster leve
+  }
+
+  function startMusic(){
+    const bgm = document.getElementById("bgm");
+    // Algunos navegadores solo permiten play() tras interacción (clic).
+    bgm.play().catch(() => {
+      // Si falla, no pasa nada; igual se verá la invitación.
+    });
+  }
+
+  function hearts(n=14){
+    for(let i=0;i<n;i++){
+      const h = document.createElement("div");
+      h.className = "heart";
+      h.textContent = Math.random() > 0.5 ? "💖" : "💗";
+      h.style.left = (Math.random()*100) + "vw";
+      h.style.animationDuration = (5 + Math.random()*6) + "s";
+      h.style.fontSize = (14 + Math.random()*22) + "px";
+      h.style.opacity = (0.35 + Math.random()*0.55);
+      document.body.appendChild(h);
+      setTimeout(() => h.remove(), 12000);
+    }
+  }
+
+  // Inicial
+  setRandomNayeon();
+  hearts(16);
+  setInterval(() => hearts(10), 2600);
+
+  // ===== Lógica botones =====
+  function reject(){
+    startMusic();
+    setRandomNayeon();
+
+    const question = document.getElementById("question");
+    const noBtn = document.getElementById("noBtn");
+    const sub = document.getElementById("sub");
+    const tiny = document.getElementById("tiny");
+
+    question.textContent = questions[noCount] || questions[questions.length-1];
+    sub.textContent = "Cada 'No' me pone más cursi… y más Nayeon 🐰💗";
+    noCount++;
+
+    if (noCount >= 4){
+      noBtn.style.display = "none";
+      tiny.textContent = "Ya fue… el destino dice que es SÍ 😌💘";
+    }
+  }
+
+  function accept(){
+    startMusic();
+    const card = document.getElementById("card");
+
+    card.innerHTML = `
+      <div class="badge">💗 TWICE approved • ONCE forever</div>
+      <h1>💖💖💖</h1>
+      <h1>Sabía que aceptarías, eres el amor de mi vida.</h1>
+      <h1>Poto amorcito 💕</h1>
+      <div class="tiny" style="margin-top:10px;">(Luz, mi Amor… feliz San Valentín 🐰)</div>
+    `;
+    hearts(26);
+  }
+</script>
+</body>
+</html>
